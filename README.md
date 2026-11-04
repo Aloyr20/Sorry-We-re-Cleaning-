@@ -96,6 +96,113 @@ The Command pattern handles each purchase of an upgrade as an independent comman
 ## Shop Refund System UML Diagram
 <img width="1149" height="707" alt="{DDB2E8E4-CCBD-4AA2-ABF1-B9C7AD6E0DA2}" src="https://github.com/user-attachments/assets/56ba9d1a-f4f1-4e2b-a908-676786abfefb" />
 
+---
+
+# Luke Explanations/Pseudocode
+
+**Singleton**:
+
+-Set the game instance to a custom instance
+
+-Make variables for each singleton in the custom instance
+
+-The singletons are actors and are placed in the scene
+
+-In the BeginPlay events of each actor, there's a short delay, then they get the game instance, cast it to the custom game instance, get the intended singleton variable, and set it to the actor itself.
+
+-To use a singleton from any blueprint, we get the game instance, cast to the custom game instance, get the intended singleton variable, then set or get one of its variables.
+
+
+That's the design/implementation. Technically, simply using a custom game instance itself directly AS a singleton is a cleaner and faster approach, however the downside is that you could only have one singleton. Also technically, the "best"/cleanest option to have multiple singletons would be to use Unreal's subsystems, however the downside is this requires usage of C++ which I don't understand well at all. Therefore, the best solution was to use a custom game instance as a container that simply holds references to different singletons, that can be accessed globally. The singletons are actors instead of objects so that they have access to the BeginPlay event, which triggers their assignment to the singleton variables in the custom instance. They have a small delay to ensure that the custom instance is all sorted out before we try to assign variables to it.
+
+Our game benefits from singletons because instead of juggling objects of a game manager, trying to keep them in sync in different blueprints, or having it be an actor in the world and finding references directly to it, we can simply get a reference to the custom game instance and get the singleton there. This allows a game manager to be guaranteed synced in all files, and easily accessible in any blueprint that's doing any task. If you want to track a new variable in the gamemanager singleton, for example we want to track doors opened, you simply make a new variable in the gamemanager, access it and increment its value in the door open event, and now it can be accessed in any other blueprint. It's that easy. For the audio manager, it allows for cooldowns that are definitely synced in all files, so sounds play at a consistent rate, etc, and prevents having multiple copies of the same thing which burns memory.
+<br>
+<br>
+<br>
+<br>
+**Factory**:
+
+-We make an actor blueprint called MessBase
+
+-Make a child of the MessBase and give it a static mesh
+
+-Make an actor blueprint called MessSpawner
+
+-In MessSpawner, make a variable of type MessBase, make it instance editable and public
+
+-In MessSpawner, make a custom event, spawn actor of the above variable class
+
+-Make a child of MessSpawner containing the name of the child of MessBase created earlier
+
+-Place the child of MessSpawner into the level, then set its MessClass to the child of MessBase with a static mesh
+
+That's the design/implementation. It's very easy to repeatedly duplicate that child of MessSpawner anywhere and spawn as many messes as you'd like. We use a factory to be able to very easily change any qualities of these messes. If we want their location to be random, we can very easily, in the child of MessSpawner, on BeginPlay or in the construction script, set the actor scale to something else, offset its location by a random amount, or anything of the sort, and it would happen instantly to every mess that spawner spawns. This lets spawning logic be a lot more modular and easily changed, so while playtesting, we can test different parameters and effects to make messes feel more fun, without repeatedly rewriting code or finding different blueprints.
+<br>
+<br>
+<br>
+<br>
+**Command**:
+
+-Make an interface called Command with just one function inside: Execute
+
+-Make an object called CommandBase, click Class Settings, add an implemented interface, select the Command interface from earlier
+
+-In CommandBase, add a variable ExpirationTimer of type float, and a variable PlayerObj of type BP_Player
+
+-Make a child of CommandBase with the name of the intended command, e.g. CommandJump
+
+-In the eventgraph you should see the Execute event from the interface, make it call the Jump function, set Jump's target to the PlayerObj variable
+
+-In the player blueprint (BP_Player), make a variable called QueuedInputCommand of type CommandBase object
+
+-Where you have your normal inputaction for jumping, make its event construct an object from the class CommandJump, set its expirationtimer to an appropriate value
+
+-Set the PlayerObj variable in CommandJump to the player blueprint (reference to self)
+
+-Set QueuedInputCommand to be the CommandJump created
+
+-Make the Event Tick event check if the CommandJump object is valid, if it is, subtract deltaseconds from the expirationtimer of the QueuedInputCommand
+
+-If the expirationtimer is greater than 0, and the player is not falling, call Execute of the QueuedInputCommand
+
+
+That's the design/implementation. From a high level overview: when the player presses jump, turn it into an object and hold it. It has a set time that counts down before it's no longer queued. While it's still queued, if the player is on the ground, we call Execute which actually enacts the jump. We use commands in this way to be able to queue inputs, which can make the game feel more responsive, and have the controller be more forgiving. If you press the jump button only 50 milliseconds before you hit the ground, by default the jump will never occur, but we queue jumps using the command pattern so that you can configure how much time before you touch the ground that you can hit the jump button and have it still work. It's implemented in this way because it's essentially the most natural way I could think to implement this pattern. It's a fairly simple pattern, as all it requires is to be able to store an input as an object for later, so we simply have an object variable that holds it. To make sure it doesn't work even after your configured time, we simply decrease the expiration timer in real time and make sure it didn't expire. We use an interface so that we can just call Execute on the CommandBase and it finds it easily, I tried avoiding using an interface originally but it appeared to be finnicky with actually finding/executing the Execute event.
+<br>
+<br>
+<br>
+<br>
+**DLL**:
+
+-Make a new visual studio C++ dll project
+
+-Go to Project -> Properties -> Configuration Properties -> C/C++ -> Precompiled Headers, and set them to off
+
+-Make a .cpp file with the name of your DLL, e.g. Unreal_DLL, export whatever variables you'd like as getter methods
+
+-Declare method bodies below
+
+-Build the dll, then put it into your Unreal Engine project Binaries/Win64 folder
+
+-In your Unreal solution, add a library header file that uses CoreMinimal and BlueprintFunctionLibrary.h to define the blueprint access type (does it have execution pins or not) and define the type and parameters of your methods with UFUNCTION declarations
+
+-As private variables, use typedef to define your types
+
+-In the corresponding cpp file, we define pointers to the previously described methods, and define the actual return values that will be used when calling the methods in blueprints
+
+-In Build.cs for Unreal, I replaced "Binaries" with "EditorBinaries" as a different place to hold the binary, so when building it doesn't cause issues trying to build on top of itself. The normal Binaries folder is still used by the editor to load the dll, but when building, it helps a lot to have it in that other folder
+
+-We make a blueprint function library (from the C++ class menu) that will actually be used to call our dll in unreal with almost identical code to the original Unreal_DLL_Library.cpp and header files
+
+-We close unreal and visual studio then generate visual studio project files
+
+-In the level blueprint in unreal, we load the dll, then can call the getter methods to access the variables
+
+-Now we can directly call getter method names in any blueprints and it works flawlessly. In our game, we use a puddleSize variable for the puddle spawner factory, which takes in the dll value then sets every puddle to that scale.
+
+
+That's the design/implementation. It was implemented in this way as to be quite frank, it was the way taught in the class slides. However, I use the dll only for getter methods for variables to use the dll as a, quite literal, package of variable values that can be easily swapped. Being able to use dlls in this way is EXTREMELY useful for rapid balancing and playtesting, as sets of values can be shared extremely easily by team members. For example, imagine you believe your game feels better with the player being a bit slower, and enemies being a bit faster. If you want your team to experience the new variable values, you could edit the scene and push it for everyone, causing problems if they were also editing it. To avoid that issue, you could duplicate the scene, taking up significantly more space and also requiring team members to git pull. To avoid any and all issues, you could simply tell every member of your team to set the playerSpeed to 11.2, and the skeletonSpeed to 12.5, and whatever other variables that you thought should be changed, however this takes time and effort, also requires members to put the values back to normal if they want to go back. What's the ultimate solution? a dll that holds only variable values and getter methods to access them. You could have a dll for high player speed slow enemies, a dll for faster projectiles and larger explosions, even set the values of every single variable in your game (hundreds?) differently in different dlls, and team members can instantly try out whatever values you have set by slotting it into a build or into their editor folder. This is an amazing concept and is something I'll be using for probably every single game I'll ever make for the rest of my life.
+
+---
 
 ## Video Report
 
