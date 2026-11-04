@@ -12,6 +12,10 @@ Players move through the house, grapple to different surfaces, dash and hide fro
 
 Some planned features include nail-based grappling, procedural generation of houses and objects that players will try to steal and which will be able to fall and make noise attracting the homeowners.
 
+## Game Screenshots
+<img width="1290" height="866" alt="{092437A5-678C-425C-BCBA-A5C945DAB4A2}" src="https://github.com/user-attachments/assets/4d231d5e-4bf9-4a85-8489-f2fcdb60d60f" />
+<img width="1919" height="860" alt="{061B3E19-1504-461F-AC41-959CA74E056B}" src="https://github.com/user-attachments/assets/5cc4c91f-f9d3-42a7-ad20-1225530aac1c" />
+
 ## Planning
 We used a Miro Board to brainstorm ideas for implementing each of the design patterns
 <img width="1406" height="1008" alt="{6687E307-09B1-4107-8304-341F22112520}" src="https://github.com/user-attachments/assets/ecb3c70a-4143-4a08-940e-3ea1528b0341" />
