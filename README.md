@@ -211,8 +211,9 @@ That's the design/implementation. It was implemented in this way as to be quite 
 
 ## Video Report
 
+Video Report: https://drive.google.com/drive/folders/16lI2nufAkd5QeCy4s6w1lcGK4iql5Idk?usp=sharing
 
-
+We recorded multiple times in a attempt to be faster then 10 minutes, however the fastest we were able to record after hours of takes was 15 minutes. When we noticed we were still over the time limit, Luke skipped alot of the DLL implementation to save time. Information on the implementation of the DLL is in the README.
 
 
 
