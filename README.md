@@ -31,6 +31,7 @@ The breakdown that we had for this assignment was 60/40, Luke being the 60%, Aug
 - Made a factory for mess spawning that spawns puddles right now
 - Used a command pattern for storing jump inputs (can be expanded for other commands)
 - Made a dll that stores variables (puddle size right now) that's easily expandable
+- Did some of the brainstorming of what to implement in Miro
 
 # Augie
 - Converted the Audio Manager class to be a singleton and added it to the game object
